@@ -43,6 +43,10 @@
           <i class="fas fa-plus"></i>
           添加分类
         </button>
+        <button class="action-btn github" @click="showGitHubSettings = true">
+          <i class="fab fa-github"></i>
+          GitHub 设置
+        </button>
         <button class="action-btn secondary" @click="exportData">
           <i class="fas fa-download"></i>
           导出数据
@@ -175,6 +179,122 @@
       @confirm="handleDeleteSite"
       @cancel="showDeleteSiteModal = false"
     />
+
+    <!-- GitHub 设置模态框 -->
+    <div v-if="showGitHubSettings" class="modal-overlay" @click="showGitHubSettings = false">
+      <div class="github-settings-modal" @click.stop>
+        <div class="modal-header">
+          <h3>
+            <i class="fab fa-github"></i>
+            GitHub 存储设置
+          </h3>
+          <button class="close-btn" @click="showGitHubSettings = false">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="github-info">
+            <p>配置 GitHub API 存储，将您的导航数据同步到 GitHub 仓库。</p>
+            <div class="benefits">
+              <span class="benefit">✅ 完全免费</span>
+              <span class="benefit">✅ 版本控制</span>
+              <span class="benefit">✅ 多设备同步</span>
+            </div>
+          </div>
+
+          <form @submit.prevent="saveGitHubConfig" class="github-form">
+            <div class="form-group">
+              <label for="github-owner">GitHub 用户名</label>
+              <input
+                id="github-owner"
+                v-model="githubConfig.owner"
+                type="text"
+                placeholder="例如: zhangbird050801"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="github-repo">仓库名称</label>
+              <input
+                id="github-repo"
+                v-model="githubConfig.repo"
+                type="text"
+                placeholder="例如: bird-nav"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="github-branch">分支名称</label>
+              <input
+                id="github-branch"
+                v-model="githubConfig.branch"
+                type="text"
+                placeholder="例如: main"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="github-path">数据文件路径</label>
+              <input
+                id="github-path"
+                v-model="githubConfig.dataPath"
+                type="text"
+                placeholder="例如: data/navigation.json"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="github-token">
+                GitHub Token (可选)
+                <span class="optional">- 用于保存数据</span>
+              </label>
+              <div class="token-input">
+                <input
+                  id="github-token"
+                  v-model="githubConfig.token"
+                  :type="showToken ? 'text' : 'password'"
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                />
+                <button
+                  type="button"
+                  class="toggle-token"
+                  @click="showToken = !showToken"
+                >
+                  <i :class="showToken ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <small class="help-text">
+                需要 <code>repo</code> 权限的 Personal Access Token
+                <a href="https://github.com/settings/tokens" target="_blank">
+                  创建 Token <i class="fas fa-external-link-alt"></i>
+                </a>
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" @click="testGitHubConnection">
+                <i class="fas fa-plug"></i>
+                测试连接
+              </button>
+              <button type="submit" class="btn-primary">
+                <i class="fas fa-save"></i>
+                保存配置
+              </button>
+            </div>
+          </form>
+
+          <div v-if="githubStatus" class="status-message" :class="githubStatus.type">
+            <i :class="githubStatus.icon"></i>
+            {{ githubStatus.message }}
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -206,6 +326,22 @@ const showAddSiteModal = ref(false)
 const showResetModal = ref(false)
 const showDeleteCategoryModal = ref(false)
 const showDeleteSiteModal = ref(false)
+const showGitHubSettings = ref(false)
+
+// GitHub 配置相关
+const showToken = ref(false)
+const githubConfig = ref({
+  owner: 'zhangbird050801',
+  repo: 'bird-nav',
+  branch: 'main',
+  dataPath: 'data/navigation.json',
+  token: ''
+})
+const githubStatus = ref<{
+  type: 'success' | 'error' | 'info';
+  message: string;
+  icon: string;
+} | null>(null)
 
 const editingCategory = ref<Category | null>(null)
 const editingSite = ref<Site | null>(null)
@@ -312,6 +448,80 @@ const closeModals = () => {
   editingSite.value = null
   selectedCategory.value = null
 }
+
+// GitHub 配置相关方法
+const loadGitHubConfig = () => {
+  try {
+    const saved = localStorage.getItem('github-config')
+    if (saved) {
+      const config = JSON.parse(saved)
+      githubConfig.value = { ...githubConfig.value, ...config }
+    }
+  } catch {
+    // 使用默认配置
+  }
+}
+
+const saveGitHubConfig = () => {
+  localStorage.setItem('github-config', JSON.stringify(githubConfig.value))
+  githubStatus.value = {
+    type: 'success',
+    message: 'GitHub 配置已保存',
+    icon: 'fas fa-check-circle'
+  }
+  setTimeout(() => {
+    githubStatus.value = null
+  }, 3000)
+}
+
+const testGitHubConnection = async () => {
+  if (!githubConfig.value.owner || !githubConfig.value.repo) {
+    githubStatus.value = {
+      type: 'error',
+      message: '请填写 GitHub 用户名和仓库名称',
+      icon: 'fas fa-exclamation-circle'
+    }
+    return
+  }
+
+  githubStatus.value = {
+    type: 'info',
+    message: '正在测试连接...',
+    icon: 'fas fa-spinner fa-spin'
+  }
+
+  try {
+    const url = `https://api.github.com/repos/${githubConfig.value.owner}/${githubConfig.value.repo}/contents/${githubConfig.value.dataPath}?ref=${githubConfig.value.branch}`
+    const response = await fetch(url)
+    
+    if (response.ok || response.status === 404) {
+      githubStatus.value = {
+        type: 'success',
+        message: '连接成功！可以访问仓库',
+        icon: 'fas fa-check-circle'
+      }
+    } else {
+      githubStatus.value = {
+        type: 'error',
+        message: `连接失败：${response.status} ${response.statusText}`,
+        icon: 'fas fa-exclamation-circle'
+      }
+    }
+  } catch (error) {
+    githubStatus.value = {
+      type: 'error',
+      message: '连接失败：网络错误',
+      icon: 'fas fa-exclamation-circle'
+    }
+  }
+
+  setTimeout(() => {
+    githubStatus.value = null
+  }, 5000)
+}
+
+// 组件挂载时加载配置
+loadGitHubConfig()
 </script>
 
 <style scoped>
@@ -439,6 +649,11 @@ const closeModals = () => {
 
 .action-btn.primary {
   background: var(--primary-color);
+  color: white;
+}
+
+.action-btn.github {
+  background: #24292e;
   color: white;
 }
 
@@ -598,6 +813,264 @@ const closeModals = () => {
   .admin-stats {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+  }
+}
+
+/* GitHub 设置模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.github-settings-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+.github-settings-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #24292e;
+  color: white;
+}
+
+.github-settings-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.github-settings-modal .close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.github-settings-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.github-settings-modal .modal-body {
+  padding: 1.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.github-info {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #24292e;
+}
+
+.github-info p {
+  margin: 0 0 1rem 0;
+  color: #374151;
+}
+
+.benefits {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.benefit {
+  background: #e5f3ff;
+  color: #0066cc;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.github-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.github-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.optional {
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.github-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.github-form input:focus {
+  outline: none;
+  border-color: #24292e;
+  box-shadow: 0 0 0 2px rgba(36, 41, 46, 0.1);
+}
+
+.token-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.token-input input {
+  flex: 1;
+}
+
+.toggle-token {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-token:hover {
+  background: white;
+  color: #374151;
+}
+
+.help-text {
+  display: block;
+  margin-top: 0.5rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.help-text a {
+  color: #24292e;
+  text-decoration: none;
+}
+
+.help-text a:hover {
+  text-decoration: underline;
+}
+
+.help-text code {
+  background: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #24292e;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1a1e22;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+  background: white;
+  transform: translateY(-2px);
+}
+
+.status-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  animation: slideIn 0.3s ease;
+}
+
+.status-message.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.status-message.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.status-message.info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

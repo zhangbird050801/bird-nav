@@ -3,12 +3,11 @@
     <div class="hero-content">
       <div class="hero-text">
         <h1 class="hero-title">
-          <span class="title-line">我的导航</span>
-          <span class="title-line">快速访问</span>
+          <span class="title-line">bird-nav</span>
         </h1>
-        <p class="hero-subtitle">
-          精心整理的网站集合，让您的网络生活更加便捷高效
-        </p>
+        <!-- <p class="hero-subtitle">
+			欢迎使用 bird-nav
+        </p> -->
         <div class="hero-stats">
           <div class="stat-item">
             <span class="stat-number">{{ totalSites }}</span>
@@ -31,7 +30,13 @@
               '--rotation': `${(index - 1) * 15}deg`
             }"
           >
-            <i :class="site.icon"></i>
+            <div class="card-icon">
+              <SmartIcon 
+                :url="site.url"
+                :icon="site.icon"
+                :alt="site.name"
+              />
+            </div>
             <span>{{ site.name }}</span>
           </div>
         </div>
@@ -48,6 +53,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Category } from '../types'
+import SmartIcon from './SmartIcon.vue'
 
 interface Props {
   categories: Category[]
@@ -74,13 +80,14 @@ const featuredSites = computed(() => {
   text-align: center;
   overflow: hidden;
   background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.9) 0%, 
-    rgba(248, 250, 252, 0.8) 100%
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(248, 250, 252, 0.9) 100%
   );
   border-radius: var(--border-radius);
   margin-bottom: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(226, 232, 240, 0.6);
   backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-light);
 }
 
 .hero-content {
@@ -90,7 +97,7 @@ const featuredSites = computed(() => {
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: center;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
 }
@@ -226,6 +233,15 @@ const featuredSites = computed(() => {
 
 .floating-card i {
   font-size: 1.5rem;
+  color: #667eea;
+}
+
+.card-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #667eea;
 }
 

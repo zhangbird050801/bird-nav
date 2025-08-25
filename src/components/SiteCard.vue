@@ -7,7 +7,11 @@
     @click="handleClick"
   >
     <div class="site-icon">
-      <i :class="site.icon"></i>
+      <SmartIcon 
+        :url="site.url"
+        :icon="site.icon"
+        :alt="site.name"
+      />
     </div>
     <div class="site-info">
       <h3 class="site-name">{{ site.name }}</h3>
@@ -30,6 +34,7 @@
 
 <script setup lang="ts">
 import type { Site } from '../types'
+import SmartIcon from './SmartIcon.vue'
 
 interface Props {
   site: Site
@@ -86,8 +91,8 @@ const handleClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
+  background: transparent;
+  color: #3b82f6;
   border-radius: 12px;
   margin-right: 1rem;
   flex-shrink: 0;

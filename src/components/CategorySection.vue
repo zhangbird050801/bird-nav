@@ -125,8 +125,8 @@ const filteredCategories = computed(() => {
 
 .sites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
   animation: fadeInGrid 0.6s ease-out;
 }
 
@@ -206,7 +206,7 @@ const filteredCategories = computed(() => {
 /* 响应式 */
 @media (max-width: 1024px) {
   .sites-grid {
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
 
@@ -226,7 +226,7 @@ const filteredCategories = computed(() => {
   }
   
   .sites-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
   }
 }

@@ -125,8 +125,8 @@ const filteredCategories = computed(() => {
 
 .sites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 2rem;
   animation: fadeInGrid 0.6s ease-out;
 }
 
@@ -204,6 +204,12 @@ const filteredCategories = computed(() => {
 }
 
 /* 响应式 */
+@media (max-width: 1024px) {
+  .sites-grid {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .category {
     padding: 1.5rem;
